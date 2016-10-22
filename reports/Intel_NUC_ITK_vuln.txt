@@ -5,7 +5,7 @@
 
   Vulnerable products
 -----------------------
-Intel NUC and other products that uses Intel Integrator Toolkit (aka ITK) UEFI drivers in their firmwares.
+Intel NUC and other products that uses Intel Integrator Toolkit (aka ITK) UEFI drivers.
 
   Vulnerability type
 ----------------------
@@ -25,7 +25,7 @@ Dmytro Oleksiuk - cr4sh0@gmail.com - http://cr4.sh
 
   
 
-  Vulnerable SW SMI 0xEF handler from ItkSmmVars driver (firmware version: SYSKLi35.86A)
+  Vulnerable SW SMI 0xEF handler from ItkSmmVars driver (firmware version: SYSKLi35.86A.0045)
 ==========================================================================================
 
                                        ;

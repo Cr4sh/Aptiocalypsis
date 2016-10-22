@@ -5,7 +5,7 @@
 
   Vulnerable products
 -----------------------
-Intel NUC and other computers with AMI Aptio based firmware (confirmed for Intel NUC6i3SYH with SYSKLi35.86A firmware version and ASUS Q170M-C motherboard).
+Intel NUC and other computers with AMI Aptio based firmware (confirmed for Intel NUC6i3SYH with SYSKLi35.86A.0045 firmware version and ASUS Q170M-C motherboard).
 
   Vulnerability type
 ----------------------
@@ -25,7 +25,7 @@ Dmytro Oleksiuk - cr4sh0@gmail.com - http://cr4.sh
 
   
 
-  Vulnerable SW SMI 0x42 handler from NvmeSmm driver (firmware version: SYSKLi35.86A)
+  Vulnerable SW SMI 0x42 handler from NvmeSmm driver (firmware version: SYSKLi35.86A.0045)
 =======================================================================================
 
                                        ;

@@ -29,7 +29,8 @@ Please note, that at this moment even patched firmware versions still allows to 
 Aptiocalypsys exploit was tested on Intel NUC NUC6i3SYH with firmware version SYSKLi35.86A.0045, to run this exploit on any other combination of computer model and firmware version you have to add the constants needed by your firmware into the BIOS_VERSIONS array (see the article for detailed information about obtaining these constants).
 
 To use aptiocalypsis.py program you need to install CHIPSEC framework (https://github.com/chipsec/chipsec).
-Usage:
+
+Command line options:
 
 # python aptiocalypsis.py [<dump_address> <dump_size> [dest_file_path]]
 
@@ -40,7 +41,7 @@ Example of using aptiocalypsis.py to dump SMRAM on Inel NUC:
 
 # python aptiocalypsis.py 0x8b400000 0x400000 /tmp/smram_dump.bin
 ****** Chipsec Linux Kernel module is licensed under GPL 2.0
-Selected BIOS version is SYSKLi35.86A
+Selected BIOS version is SYSKLi35.86A.0045
 Dump address is 0x8b400000:8b7fffff
 Physical memory for temporary read buffer allocated at 0x846800000
 SMM memcpy() address is 0x8b702110
