@@ -15,14 +15,14 @@ The vulnerability was discovered during reverse engineering of platform firmware
 
 https://security-center.intel.com/advisory.aspx?intelid=INTEL-SA-00057&languageid=en-fr
 
-Fixed firmware for my NUC of version SYSKLi35.86A.0052 was released at 10.09.2016:
+Fixed firmware for my NUC of version SYSKLi35.86A.0051 was released at 10.08.2016:
 
-https://downloadcenter.intel.com/download/26283/BIOS-Update-SYSKLi35-86A-
+https://downloadcenter.intel.com/download/26195/BIOS-Update-SYSKLi35-86A-
 
 Vulnerable UEFI SMM drivers are also presents in computers with AMI based firmware from other manufacturers. For example, firmware of Asus Q170M-C motherboard has two from four vulnerable drivers described above. At this moment it seems that Intel is only one OEM company who released advisory and fixes for these vulnerabilities. Probably, in some future we’ll see some information about vulnerable products from other vendors. Original reports that was sent to Intel can be found in reports/ folder:
 
-https://github.com/Cr4sh/Aptiocalypsis/tree/master/reports/Intel_NUC_AMI_vuln.txt
-https://github.com/Cr4sh/Aptiocalypsis/tree/master/reports/Intel_NUC_ITK_vuln.txt
+https://raw.githubusercontent.com/Cr4sh/Aptiocalypsis/master/reports/Intel_NUC_AMI_vuln.txt
+https://raw.githubusercontent.com/Cr4sh/Aptiocalypsis/master/reports/Intel_NUC_ITK_vuln.txt
 
 Please note, that at this moment even patched firmware versions still allows to use these vulnerabilities to bypass Credential Guard and others Virtual Secure Mode powered features of Windows 10 (see the article for detailed analysis of Intel and AMI security fixes).
 
